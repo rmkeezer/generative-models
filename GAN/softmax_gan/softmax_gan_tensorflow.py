@@ -8,11 +8,11 @@ import random
 
 
 mb_size = 1
-X_dim = 877400
+X_dim = 109568
 z_dim = 64
 h_dim = 128
 dlr = 1e-8
-glr = 1e-3
+glr = 1e-1
 d_steps = 3
 
 #mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
@@ -21,6 +21,7 @@ mnist = list(mnist)
 newMnist = []
 for n in mnist:
     if n.shape == (856, 1025):
+        n = n[:, :128]
         newMnist.append(n)
 mnist = newMnist
 newMnist = []
@@ -37,7 +38,7 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(sample.reshape(856, 1025), cmap='Greys_r')
+        plt.imshow(sample.reshape(856, 128), cmap='Greys_r')
 
     return fig
 
@@ -114,7 +115,7 @@ i = 0
 
 for it in range(1000000):
     X_mb = np.array([random.sample(mnist, 1)[0].flatten()])
-    while X_mb.shape != (1, 877400):
+    while X_mb.shape != (1, 109568):
         print(X_mb.shape)
         X_mb = np.array([random.sample(mnist, 1)[0].flatten()])
     z_mb = sample_z(mb_size, z_dim)
@@ -133,7 +134,7 @@ for it in range(1000000):
         samples = sess.run(G_sample, feed_dict={z: sample_z(1, z_dim)})
 
         print(samples)
-        np.save('out/{}'.format(str(i).zfill(3)), samples.reshape(856,1025))
+        np.save('out/{}'.format(str(i).zfill(3)), samples.reshape(856,128))
 
         fig = plot(samples)
         plt.savefig('out/{}.png'
