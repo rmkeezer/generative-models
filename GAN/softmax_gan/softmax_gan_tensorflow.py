@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
+#from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -10,9 +10,9 @@ import random
 mb_size = 1
 X_dim = 877400
 z_dim = 64
-h_dim = 64
+h_dim = 128
 dlr = 1e-8
-glr = 1e-5
+glr = 1e-3
 d_steps = 3
 
 #mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
@@ -27,9 +27,9 @@ newMnist = []
 print(len(mnist))
 
 def plot(samples):
-    fig = plt.figure(figsize=(4, 4))
-    gs = gridspec.GridSpec(4, 4)
-    gs.update(wspace=0.05, hspace=0.05)
+    fig = plt.figure(figsize=(1, 1))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(wspace=0.01, hspace=0.01)
 
     for i, sample in enumerate(samples):
         ax = plt.subplot(gs[i])
@@ -37,7 +37,7 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+        plt.imshow(sample.reshape(856, 1025), cmap='Greys_r')
 
     return fig
 
@@ -135,8 +135,12 @@ for it in range(1000000):
         print(samples)
         np.save('out/{}'.format(str(i).zfill(3)), samples.reshape(856,1025))
 
-        # fig = plot(samples)
-        # plt.savefig('out/{}.png'
-        #             .format(str(i).zfill(3)), bbox_inches='tight')
-        i += 1
+        fig = plot(samples)
+        plt.savefig('out/{}.png'
+                    .format(str(i).zfill(3)), bbox_inches='tight', dpi=1000)
+        plt.close(fig)
+        # fig = plot(X_mb)
+        # plt.savefig('out/{}test.png'
+        #             .format(str(i).zfill(3)), bbox_inches='tight', dpi=1000)
         # plt.close(fig)
+        i += 1
