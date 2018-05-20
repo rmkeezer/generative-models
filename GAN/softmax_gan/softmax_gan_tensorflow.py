@@ -4,17 +4,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
+import random
 
 
-mb_size = 32
-X_dim = 784
+mb_size = 1
+X_dim = 877400
 z_dim = 64
-h_dim = 128
-lr = 1e-3
+h_dim = 64
+dlr = 1e-8
+glr = 1e-5
 d_steps = 3
 
-mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
-
+#mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
+mnist = np.load("test0.npy")
+mnist = list(mnist)
+newMnist = []
+for n in mnist:
+    if n.shape == (856, 1025):
+        newMnist.append(n)
+mnist = newMnist
+newMnist = []
+print(len(mnist))
 
 def plot(samples):
     fig = plt.figure(figsize=(4, 4))
@@ -89,9 +99,9 @@ Z = tf.reduce_sum(tf.exp(-D_real)) + tf.reduce_sum(tf.exp(-D_fake))
 D_loss = tf.reduce_sum(D_target * D_real) + log(Z)
 G_loss = tf.reduce_sum(G_target * D_real) + tf.reduce_sum(G_target * D_fake) + log(Z)
 
-D_solver = (tf.train.AdamOptimizer(learning_rate=lr)
+D_solver = (tf.train.AdamOptimizer(learning_rate=dlr)
             .minimize(D_loss, var_list=theta_D))
-G_solver = (tf.train.AdamOptimizer(learning_rate=lr)
+G_solver = (tf.train.AdamOptimizer(learning_rate=glr)
             .minimize(G_loss, var_list=theta_G))
 
 sess = tf.Session()
@@ -103,7 +113,10 @@ if not os.path.exists('out/'):
 i = 0
 
 for it in range(1000000):
-    X_mb, _ = mnist.train.next_batch(mb_size)
+    X_mb = np.array([random.sample(mnist, 1)[0].flatten()])
+    while X_mb.shape != (1, 877400):
+        print(X_mb.shape)
+        X_mb = np.array([random.sample(mnist, 1)[0].flatten()])
     z_mb = sample_z(mb_size, z_dim)
 
     _, D_loss_curr = sess.run(
@@ -114,14 +127,16 @@ for it in range(1000000):
         [G_solver, G_loss], feed_dict={X: X_mb, z: z_mb}
     )
 
-    if it % 1000 == 0:
+    if it % 100 == 0:
         print('Iter: {}; D_loss: {:.4}; G_loss: {:.4}'
               .format(it, D_loss_curr, G_loss_curr))
+        samples = sess.run(G_sample, feed_dict={z: sample_z(1, z_dim)})
 
-        samples = sess.run(G_sample, feed_dict={z: sample_z(16, z_dim)})
+        print(samples)
+        np.save('out/{}'.format(str(i).zfill(3)), samples.reshape(856,1025))
 
-        fig = plot(samples)
-        plt.savefig('out/{}.png'
-                    .format(str(i).zfill(3)), bbox_inches='tight')
+        # fig = plot(samples)
+        # plt.savefig('out/{}.png'
+        #             .format(str(i).zfill(3)), bbox_inches='tight')
         i += 1
-        plt.close(fig)
+        # plt.close(fig)

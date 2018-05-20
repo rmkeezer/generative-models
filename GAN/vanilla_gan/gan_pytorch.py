@@ -9,7 +9,6 @@ import os
 from torch.autograd import Variable
 from tensorflow.examples.tutorials.mnist import input_data
 
-
 mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
 mb_size = 64
 Z_dim = 100
@@ -19,11 +18,14 @@ h_dim = 128
 c = 0
 lr = 1e-3
 
+#torch.backends.cudnn.benchmark = True
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 
 def xavier_init(size):
     in_dim = size[0]
     xavier_stddev = 1. / np.sqrt(in_dim / 2.)
-    return Variable(torch.randn(*size) * xavier_stddev, requires_grad=True)
+    return Variable(torch.randn(*size) * xavier_stddev, requires_grad=True).cuda()
 
 
 """ ==================== GENERATOR ======================== """
@@ -82,7 +84,7 @@ for it in range(100000):
     # Sample data
     z = Variable(torch.randn(mb_size, Z_dim))
     X, _ = mnist.train.next_batch(mb_size)
-    X = Variable(torch.from_numpy(X))
+    X = Variable(torch.from_numpy(X)).cuda()
 
     # Dicriminator forward-loss-backward-update
     G_sample = G(z)
@@ -114,9 +116,9 @@ for it in range(100000):
 
     # Print and plot every now and then
     if it % 1000 == 0:
-        print('Iter-{}; D_loss: {}; G_loss: {}'.format(it, D_loss.data.numpy(), G_loss.data.numpy()))
+        print('Iter-{}; D_loss: {}; G_loss: {}'.format(it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
-        samples = G(z).data.numpy()[:16]
+        samples = G(z).data.cpu().numpy()[:16]
 
         fig = plt.figure(figsize=(4, 4))
         gs = gridspec.GridSpec(4, 4)
