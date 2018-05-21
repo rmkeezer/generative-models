@@ -1,26 +1,38 @@
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
+#from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import os
+import random
 
 
-mb_size = 32
-X_dim = 784
+mb_size = 1
+X_dim = 109568
 z_dim = 64
 h_dim = 128
-lr = 5e-4
+dlr = 1e-10
+glr = 1e-4
+lr = 5e-5
 n_iter = 1000
 n_epoch = 1000
 N = n_iter * mb_size  # N data per epoch
 
-mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
-
+#mnist = input_data.read_data_sets('../../MNIST_data', one_hot=True)
+mnist = np.load("test0.npy")
+mnist = list(mnist)
+newMnist = []
+for n in mnist:
+    if n.shape == (856, 1025):
+        n = n[:, :128]
+        newMnist.append(n.flatten())
+mnist = newMnist
+newMnist = []
+print(len(mnist))
 
 def plot(samples):
-    fig = plt.figure(figsize=(4, 4))
-    gs = gridspec.GridSpec(4, 4)
+    fig = plt.figure(figsize=(1, 1))
+    gs = gridspec.GridSpec(1, 1)
     gs.update(wspace=0.05, hspace=0.05)
 
     for i, sample in enumerate(samples):
@@ -29,7 +41,7 @@ def plot(samples):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         ax.set_aspect('equal')
-        plt.imshow(sample.reshape(28, 28), cmap='Greys_r')
+        plt.imshow(sample.reshape(856, 128), cmap='Greys_r')
 
     return fig
 
@@ -100,7 +112,8 @@ if not os.path.exists('out/'):
 
 # Pretrain
 for it in range(2*n_iter):
-    X_mb, _ = mnist.train.next_batch(mb_size)
+    #X_mb, _ = mnist.train.next_batch(mb_size)
+    X_mb = np.array([random.sample(mnist, 1)[0]])
 
     _, D_recon_loss_curr = sess.run(
         [D_recon_solver, D_recon_loss], feed_dict={X: X_mb}
@@ -112,7 +125,7 @@ for it in range(2*n_iter):
 
 i = 0
 # Initial margin, expected energy of real data
-margin = sess.run(D_recon_loss, feed_dict={X: mnist.train.images})
+margin = sess.run(D_recon_loss, feed_dict={X: mnist})
 s_z_before = np.inf
 
 # GAN training
@@ -120,7 +133,11 @@ for t in range(n_epoch):
     s_x, s_z = 0., 0.
 
     for it in range(n_iter):
-        X_mb, _ = mnist.train.next_batch(mb_size)
+        #X_mb, _ = mnist.train.next_batch(mb_size)
+        X_mb = np.array([random.sample(mnist, 1)[0]])
+        while X_mb.shape != (1, 109568):
+            print(X_mb.shape)
+            X_mb = np.array([random.sample(mnist, 1)[0]])
         z_mb = sample_z(mb_size, z_dim)
 
         _, D_loss_curr, D_real_curr = sess.run(
@@ -152,10 +169,17 @@ for t in range(n_epoch):
     # Visualize
     print('Epoch: {}; m: {:.4}, L: {:.4}'.format(t, margin, L))
 
-    samples = sess.run(G_sample, feed_dict={z: sample_z(16, z_dim)})
+    samples = sess.run(G_sample, feed_dict={z: sample_z(1, z_dim)})
+
+    print(samples)
+    np.save('out/{}'.format(str(i).zfill(3)), samples.reshape(856,128))
 
     fig = plot(samples)
     plt.savefig('out/{}.png'
-                .format(str(i).zfill(3)), bbox_inches='tight')
-    i += 1
+                .format(str(i).zfill(3)), bbox_inches='tight', dpi=1000)
     plt.close(fig)
+    # fig = plot(X_mb)
+    # plt.savefig('out/{}test.png'
+    #             .format(str(i).zfill(3)), bbox_inches='tight', dpi=1000)
+    # plt.close(fig)
+    i += 1
